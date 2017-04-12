@@ -1,0 +1,199 @@
+
+源
+
+1.创建Oracle用户并授权：
+create user ogg identified by ogg default tablespace users;
+grant dba to ogg;
+
+2.设置数据库参数：
+打开归档模式
+SQL> archive log list;(需要as sysdba)
+SQL> shutdown immediate;
+SQL> startup mount;
+SQL> alter database archivelog; 
+SQL> alter database open;
+
+打开强制日志模式
+SQL> select force_logging from v$database
+SQL> alter database force logging;
+
+
+打开最小附加日志
+SQL> select supplemental_log_data_min from v$database; 
+SQL> alter database add supplemental log data;
+SQL> alter system switch logfile;(切换日志以使附加日志生效)
+
+添加表级附加日志trandata
+GGSCI> dblogin userid ogg,password ogg
+GGSCI> add trandata scott.*
+
+3.配置进程
+
+创建GoldenGate子目录
+GGSCI >create subdirs
+
+配置Manager管理主进程
+GGSCI > edit param mgr
+        port 7809
+GGSCI > start mgr
+
+配置Extract初始化进程
+GGSCI > add extract ext_init, sourceistable
+GGSCI > edit param ext_init
+
+EXTRACT ext_init
+setenv (NLS_LANG = 'AMERICAN_AMERICA.AL32UTF8')
+setenv (ORACLE_SID = sourcedb)
+USERID ogg, PASSWORD ogg
+rmthost 192.168.1.215,mgrport 7809,compress
+rmttask replicat,group rep_init
+table scott.*;
+
+
+配置Extract同步进程
+GGSCI > add extract ext_a,tranlog,begin now
+GGSCI > edit param ext_a
+
+EXTRACT ext_a
+setenv (NLS_LANG = 'AMERICAN_AMERICA.AL32UTF8')
+setenv (ORACLE_SID = sourcedb)
+USERID ogg, PASSWORD ogg
+EXTTRAIL d:\0gg\dirdat\la
+dynamicresolution
+table scott.*;
+
+GGSCI > start ext_a
+
+
+每一个Extract进程都要对应一个本地或远程队列，指明Extract进程抽取的数据要写到何处。
+
+
+为Extract进程添加本地队列
+GGSCI >add exttrail d:\ogg\dirdat\la,extract ext_a,megabytes 20
+
+
+ 
+配置pump文件传输进程
+GGSCI > add extract pump_a, exttrailsource d:\ogg\dirdat\la   --,extract ext_a
+GGSCI > edit param pump_a
+
+EXTRACT pump_a
+setenv (NLS_LANG = 'AMERICAN_AMERICA.AL32UTF8')
+passthru
+rmthost 192.168.1.111, mgrport 7809, compress
+rmttrail d:\ogg\dirdat\ra
+dynamicresolution
+table scott.*;
+
+GGSCI > start pump_a
+
+
+为传输进程添加远程队列
+GGSCI > add rmttrail d:\ogg\dirdat\ra,extract pump_a megabytes 20
+
+
+
+
+
+----------------------------------------------------------------------------------------------
+
+目标
+
+1.创建Oracle用户并授权：
+create user ogg identified by ogg default tablespace users;
+grant dba to ogg;
+
+
+启用CheckPoint：
+在目标端ogg目录下新建GLOBALS文件，写入checkpointtable ogg.checkpoint
+GGSCI > dblogin userid ogg, password ogg
+GGSCI > add checkpointtable ogg.checkpoint
+
+
+
+2.配置进程
+创建GoldenGate子目录
+GGSCI >create subdirs
+
+配置Manager管理主进程
+GGSCI > edit param mgr
+        port 7809
+GGSCI > start mgr
+
+配置replicat初始化进程
+GGSCI > add replicat rep_init, specialrun
+GGSCI > edit param rep_init
+
+replicat rep_init
+setenv (NLS_LANG = 'AMERICAN_AMERICA.AL32UTF8')
+setenv (ORACLE_SID = targetdb)
+userid ogg, password ogg
+assumetargetdefs
+map test001.t1, target test001.t1;
+
+
+
+配置replicat同步应用进程
+GGSCI > add replicat rep_a,exttrail c:\ogg\dirdat\ra,nodbcheckpoint --指定读取的本地trail文件
+GGSCI > edit param rep_a
+
+replicat rep_a
+setenv (NLS_LANG = 'AMERICAN_AMERICA.AL32UTF8')
+setenv (ORACLE_SID = targetdb)
+userid ogg, password ogg
+reperror default,discard
+discardfile d:\ogg\dirrpt/rep_a.dsc, append, megabytes 10
+assumetargetdefs
+dynamicresolution
+map test001.t1, target test001.t1;
+
+GGSCI > start rep_a
+
+
+
+-----------------------------------------------------------------------------------------------
+
+数据的初始化
+
+源端启动初始化进程ext_init
+启动ext_init进程后，ext_init进程执行完初始化后会自动停止该进程。
+
+-----------------------------------------------------------------------------------------------
+
+查看命令
+
+GGSCI > view param mgr
+
+GGSCI > info all 查看进程状态
+
+GGSCI > info ext_a 概要信息
+
+GGSCI > view report ext_a 详细信息
+
+GGSCI > stats ext_a
+
+GGSCI > info trandata test001.*
+
+GGSCI > info extract *,tasks
+
+GGSCI > info replicat *,task
+
+
+
+setenv (NLS_LANG = 'SIMPLIFIED CHINESE_CHINA.ZHS16GBK')
+setenv (ORACLE_SID = orcl)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
