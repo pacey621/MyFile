@@ -73,7 +73,7 @@ GGSCI >add exttrail d:\ogg\dirdat\la,extract ext_a,megabytes 20
 
 
  
-配置pump文件传输进程
+配置pump文件传输进程 
 GGSCI > add extract pump_a, exttrailsource d:\ogg\dirdat\la   --,extract ext_a
 GGSCI > edit param pump_a
 
