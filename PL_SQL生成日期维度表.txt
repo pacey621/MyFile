@@ -1,0 +1,149 @@
+--drop table dim_date;
+CREATE TABLE dim_date (
+  date_key number(8) PRIMARY KEY,
+  date_value date UNIQUE,
+  date_short char(12) NOT NULL,
+  date_medium char(16) NOT NULL,
+  date_long char(24) NOT NULL,
+  date_full char(32) NOT NULL,
+  day_in_year number(5) NOT NULL,
+  day_in_month number(3) NOT NULL,
+  is_first_day_in_month char(10) NOT NULL,
+  is_last_day_in_month char(10) NOT NULL,
+  day_abbreviation char(3) NOT NULL,
+  day_name char(12) NOT NULL,
+  week_in_year number(3) NOT NULL,
+  week_in_month number(3) NOT NULL,
+  is_first_day_in_week char(10) NOT NULL,
+  is_last_day_in_week char(10) NOT NULL,
+  month_number number(3) NOT NULL,
+  month_abbreviation char(3) NOT NULL,
+  month_name char(12) NOT NULL,
+  year2 char(2) NOT NULL,
+  year4 number(5) NOT NULL,
+  quarter_name char(2) NOT NULL,
+  quarter_number number(3) NOT NULL,
+  year_quarter char(7) NOT NULL,
+  year_month_number char(7) NOT NULL,
+  year_month_abbreviation char(8) NOT NULL
+);
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE SP_GENERATE_DATE_DIMENSION(begin_date in varchar2,
+                                                       end_date in varchar2) is
+
+  /*生成日期维度数据
+  begin_date: 起始时间20170101
+  end_date:结束时间20171231
+  */
+
+  dDate date;
+
+  v_date_key number(8);               --20000101
+  v_date_value date;                  --2000-01-01
+  v_date_short char(12);              --00-01-01
+  v_date_medium char(16);             --2000-01-01
+  v_date_long char(24);               --1 janvier 2000
+  v_date_full char(32);               --samedi 1 janvier 2000
+  v_day_in_year number(5);            --1
+  v_day_in_month number(3);           --1
+  v_is_first_day_in_month char(10);   --yes
+  v_is_last_day_in_month char(10);    --no
+  v_day_abbreviation char(3);         --sam
+  v_day_name char(12);                --samedi
+  v_week_in_year number(3);           --1
+  v_week_in_month number(3);          --1
+  v_is_first_day_in_week char(10);    --no
+  v_is_last_day_in_week char(10);     --yes
+  v_month_number number(3);           --1
+  v_month_abbreviation char(3);       --jan
+  v_month_name char(12);              --janvier
+  v_year2 char(2);                    --20
+  v_year4 number(5);                  --2000
+  v_quarter_name char(2);             --Q1
+  v_quarter_number number(3);         --1
+  v_year_quarter char(7);             --2000-Q1
+  v_year_month_number char(7);        --2000-01
+  v_year_month_abbreviation char(8);  --2000-jan
+
+
+
+
+
+BEGIN
+
+dDate := to_date(begin_date,'yyyymmdd');
+
+WHILE (dDate <= to_date(end_date,'yyyymmdd'))
+loop
+
+  v_date_key := to_number(to_char(to_date(TO_CHAR(DDATE,'yyyy-mm-dd'),'yyyy-mm-dd'),'yyyymmdd'));
+  v_date_value := to_date(TO_CHAR(to_date(TO_CHAR(DDATE,'yyyy-mm-dd'),'yyyy-mm-dd'),'yyyy-mm-dd'),'yyyy-mm-dd');
+  v_date_short := to_char(dDate,'yy-mm-dd');
+  v_date_medium := to_char(dDate,'yyyy-mm-dd');
+  v_date_long := to_char(dDate,'dd')||' '||to_char(dDate,'MONTH','NLS_DATE_LANGUAGE=''american')||' '||to_char(dDate,'YYYY');--1 janvier 2000
+  v_date_full := to_char(dDate,'DAY','NLS_DATE_LANGUAGE=''american')||' '||to_char(dDate,'dd')||' '||to_char(dDate,'MONTH','NLS_DATE_LANGUAGE=''american')||' '||to_char(dDate,'YYYY');--samedi 1 janvier 2000
+  v_day_in_year := to_number(to_char(DDATE,'ddd'));
+  v_day_in_month := to_number(to_char(DDATE,'dd'));
+  --CASE WHEN (to_number(to_char(dDate,'dd'))=1) THEN v_is_first_day_in_month := 'YES' ELSE v_is_first_day_in_month :=  'NO' END;
+  --CASE WHEN  (to_char(dDate,'dd')=to_char(last_day(trunc(DDATE,'MONTH')),'dd'))THEN v_is_last_day_in_month := 'YES' ELSE v_is_last_day_in_month :=  'NO' END;
+  v_day_abbreviation := to_char(DDATE,'DY','NLS_DATE_LANGUAGE=''american');
+  v_day_name := to_char(DDATE,'DAY','NLS_DATE_LANGUAGE=''american');
+  v_week_in_year := to_number(to_char(DDATE,'WW'));
+  v_week_in_month := to_number(to_char(DDATE,'W'));
+  --CASE WHEN (to_number(to_char(dDate,'d'))=2) THEN v_is_first_day_in_week := 'YES' ELSE v_is_first_day_in_week :=  'NO' END;
+  --CASE WHEN (to_number(to_char(dDate,'d'))=1) THEN v_is_last_day_in_week := 'YES' ELSE v_is_last_day_in_week :=  'NO' END;
+  v_month_number := to_number(to_char(DDATE,'MM'));
+  v_month_abbreviation := to_char(DDATE,'MON','NLS_DATE_LANGUAGE=''american');
+  v_month_name := to_char(DDATE,'MONTH','NLS_DATE_LANGUAGE=''american');
+  v_year2 := to_char(DDATE,'YY','NLS_DATE_LANGUAGE=''american');
+  v_year4 := to_number(to_char(DDATE,'YYYY'));
+  v_quarter_name := 'Q'||to_char(DDATE,'Q');
+  v_quarter_number := to_number(to_char(DDATE,'Q'));
+  v_year_quarter := to_char(DDATE,'YYYY')||'-Q'||to_char(DDATE,'Q');
+  v_year_month_number := to_char(DDATE,'YYYY-MM','NLS_DATE_LANGUAGE=''american');
+  v_year_month_abbreviation := to_char(DDATE,'YYYY-MON','NLS_DATE_LANGUAGE=''american');
+
+
+
+
+  insert into DIM_DATE
+                      values(  v_date_key,
+  v_date_value,
+  v_date_short,
+  v_date_medium,
+  v_date_long,
+  v_date_full,
+  v_day_in_year,
+  v_day_in_month,
+  --v_is_first_day_in_month,
+  --v_is_last_day_in_month,
+  CASE WHEN (to_number(to_char(dDate,'dd'))=1) THEN  'YES' ELSE  'NO' END,
+  CASE WHEN  (to_char(dDate,'dd')=to_char(last_day(trunc(DDATE,'MONTH')),'dd'))THEN 'YES' ELSE 'NO' END,
+  v_day_abbreviation,
+  v_day_name,
+  v_week_in_year,
+  v_week_in_month,
+  --v_is_first_day_in_week,
+  --v_is_last_day_in_week,
+  CASE WHEN (to_number(to_char(dDate,'d'))=1) THEN 'YES' ELSE 'NO' END,--周日为第一天
+  CASE WHEN (to_number(to_char(dDate,'d'))=7) THEN 'YES' ELSE 'NO' END,
+  v_month_number,
+  v_month_abbreviation,
+  v_month_name,
+  v_year2,
+  v_year4,
+  v_quarter_name,
+  v_quarter_number,
+  v_year_quarter,
+  v_year_month_number,
+  v_year_month_abbreviation);
+
+  dDate :=  dDate + 1;
+END loop;
+commit;
+end;
+

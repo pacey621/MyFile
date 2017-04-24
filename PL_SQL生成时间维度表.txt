@@ -1,0 +1,66 @@
+--DROP TABLE dim_time;
+
+CREATE TABLE dim_time (
+  time_key char(8) PRIMARY KEY,
+  time_value char(10) UNIQUE,
+  hours24 number(3) NOT NULL,
+  hours12 number(3) DEFAULT NULL,
+  minutes number(3) DEFAULT NULL,
+  seconds number(3) DEFAULT NULL,
+  am_pm char(4) DEFAULT NULL
+) ;
+
+
+
+
+CREATE OR REPLACE PROCEDURE SP_GENERATE_TIME_DIMENSION is
+
+  /*生成时间维度数据*/
+
+  dDate date;
+
+  v_time_key char(8);
+  v_time_value char(10);
+  v_hours24 number(3);
+  v_hours12 number(3);
+  v_minutes number(3);
+  v_seconds number(3);
+  v_am_pm char(4);
+
+
+BEGIN
+
+dDate := to_date('1970-01-01 00:00:00','yyyy-mm-dd HH24:MI:SS');
+
+WHILE (dDate <= to_date('1970-01-01 23:59:59','yyyy-mm-dd HH24:MI:SS'))
+loop
+
+           v_time_key := TO_CHAR(dDate,'HH24')||TO_CHAR(dDate,'MI')||TO_CHAR(dDate,'SS');
+           v_time_value := TO_CHAR(dDate,'HH24:MI:SS');
+           v_hours24 := to_number(TO_CHAR(dDate,'HH24'));
+           v_hours12 := to_number(TO_CHAR(dDate,'HH12'));
+           v_minutes := to_number(TO_CHAR(dDate,'MI'));
+           v_seconds := to_number(TO_CHAR(dDate,'SS'));
+           v_am_pm := TO_CHAR(dDate,'AM','NLS_DATE_LANGUAGE=''american');
+
+           insert into DIM_TIME values(
+                                          v_time_key,
+                                          v_time_value,
+                                          v_hours24,
+                                          v_hours12,
+                                          v_minutes,
+                                          v_seconds,
+                                          v_am_pm);
+
+
+
+
+
+
+  dDate :=  dDate + 1/(24*60*60);
+
+END loop;
+
+--commit;
+
+end;
