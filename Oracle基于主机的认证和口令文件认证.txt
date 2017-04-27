@@ -1,0 +1,209 @@
+
+影响sqlplus / as sysdba登录失败的因素：
+
+1.sqlnet.ora文件的SQLNET.AUTHENTICATION_SERVICES参数
+2.实例的REMOTE_LOGIN_PASSWORDFILE参数
+3.口令文件
+4.ora_dba组
+5.set oracle_sid = orcl
+
+当以sysdba/sysoper登录数据库时，受sqlnet.ora，口令文件，参数remote_login_passwordfile的影响；
+
+
+--------------------------------------------------------------------------------------------
+
+
+SQLNET.AUTHENTICATION_SERVICES参数决定了是否可以使用操作系统认证。
+
+-----
+
+SQLNET.AUTHENTICATION_SERVICES参数
+
+在SQLNET.ORA（位于$ORACLE_HOME/NETWORK/ADMIN目录中）文件中，需要修改时直接用文本编辑器打开修改就行了，对于不同的操作系统SQLNET.AUTHENTICATION_SERVICES的取值会有些不一样，通常我们会用到下面的一些设置值：
+
+SQLNET.AUTHENTICATION_SERVICES = (ALL)
+对Linux系统，支持OS认证和口令文件认证。
+对Windows系统，实际实验是不支持此参数，验证失败。
+
+SQLNET.AUTHENTICATION_SERVICES = (NTS)
+此设置值仅用于Windows NT系统，此设置同时支持OS认证和口令文件认证，只有在设置了(NTS)值之后运行在Windows系统上的Oracle才支持OS认证。
+
+SQLNET.AUTHENTICATION_SERVICES = (NONE)
+此设置值在Windows和Linux是作用一样的，指定Oracle只使用口令文件认证。
+
+不设置此参数或SQLNET.AUTHENTICATION_SERVICES =
+对Linux系统，默认支持OS认证和口令文件认证。
+对Windows系统，默认只支持口令文件认证，不支持OS认证。
+
+------
+
+在Windows下，如果设置为NTS，sqlplus / as sysdba可以登陆。
+如果设置为NONE，ALL或者没有此参数，会报ORA-01031: insufficient privileges错误。
+
+在Unix/Linux下，如果没有此参数，或者为ALL，sqlplus / as sysdba可以登陆。
+如果设置为NONE或者NTS，会报ORA-01031: insufficient privileges错误。
+
+
+Windows系统：sqlplus / as sysdba
+
+当SQLNET.AUTHENTICATION_SERVICES= (NTS)，登录成功
+当SQLNET.AUTHENTICATION_SERVICES= (NONE)，登录提示权限不足
+当SQLNET.AUTHENTICATION_SERVICES= (ALL)，提示验证服务无法初始化
+
+
+Unix/Linux系统：sqlplus / as sysdba
+
+当SQLNET.AUTHENTICATION_SERVICES= (NTS)或SQLNET.AUTHENTICATION_SERVICES= (NONE)，提示权限不足
+当注释SQLNET.AUTHENTICATION_SERVICES= (NTS)或SQLNET.AUTHENTICATION_SERVICES= (ALL)，登录成功
+
+
+注意：默认情况下，Unix/Linux下的sqlnet.ora文件是没有SQLNET.AUTHENTICATION_SERVICES参数的，
+似乎连sqlnet.ora这个文件也没有，这和Windows有很大的不同。此时是操作系统验证和Oracle密码验证并存，如果加上SQLNET.AUTHENTICATION_SERVICES这个参数后，不管是设置为(NONE)、(NTS)或(NONE,NTS)，都是基于Oracle密码验证。
+
+
+
+-----------------------------------------------------------------------------------------------
+
+
+口令文件也叫密码文件，用于存放被授予SYSDBA及SYSOPER权限的用户的用户名和密码，是一个加密的操作系统文件。
+口令文件允许用户连接到远程数据库，执行数据库的管理任务。特别是远程的数据库关闭的时候，使用口令文件，数据库管理员可以远程启动数据库。数据库管理员也可以远程关闭数据库。
+
+
+REMOTE_LOGIN_PASSWORDFILE参数控制着密码文件的使用及其状态。
+
+使用alter system语句修改此参数必须指定scope=spfile，并需要重启数据库。
+
+1、NONE
+不使用密码文件，这也就意味着此时不能够远程sysdba和sysoper登陆。
+
+2、EXCLUSIVE
+只有一个数据库实例可以使用此密码文件。
+在此设置下的密码文件可以包含有除 SYS 以外的用户信息，即允许将系统权限 SYSOPER /SYSDBA 授予除 SYS 以外的其他用户。
+如果密码文件被删除，这个时候远程sysdba登陆，就会报ORA-01031: insufficient privileges错误。
+
+3、SHARED
+可以有多个数据库实例使用此密码文件。
+在此设置下只有 SYS 帐号能被密码文件识别，不允许将系统权限 SYSOPER /SYSDBA 授予除 SYS 以外的其他用户。
+即使文件中存有其他用户的信息，也不允许他们以 SYSOPER /SYSDBA 的权限登录。
+
+
+
+----------------------------------------------------------------------------------------------
+
+
+
+Oracle的口令文件的作用是存放所有以sysdba或者sysoper权限连接数据库的用户的口令，如果想以sysdba权限远程连接数据库，必须使用口令文件，否则不能连上。
+
+使用口令文件的好处是即使在实例不处于open状态的情况下，依然可以通过口令文件验证来连接数据库。
+
+一般用在遠程登錄作系統管理任務時使用！
+
+
+
+没有给普通用户授予sysdba权限，口令文件中只存放了sys的口令，如果之后把sysdba权限授予了普通用户，那么此时会把普通用户的口令从数据库中读到口令文件中保存下来，当然这时必须要求数据库处于open状态。
+
+查看口令文件中的用户：select * from v$pwfile_users;
+
+向口令文件中增加用户：grant sysdba to px;
+
+
+sysdba 是系统权限，dba是用户对象权限；
+
+
+
+对于sysdba和sysoper登陆来说，验证方式为口令文件验证或者操作系统验证。
+
+如果是操作系统认证，不需要指定用户名密码。但是操作系统的登陆用户必须为dba组。
+ 在windows下，dba组的名称为ora_dba，
+ 在unix下，dba组名称为dba。
+
+如果是口令文件验证，密码保存在口令文件中，
+ 在windows下，口令文件位于%ORACLE_HOME%/database下面，文件名PWD<sid>.ora。
+ 在unix下，口令文件位于$ORACLE_HOME/dbs下面，文件名orapw<sid>.ora。
+
+
+
+Oracle的实用程序orapwd命令可以用来创建口令文件,该命令的参数有3个:
+File参数:口令文件名称
+Password参数：sys用户的口令
+Entries参数：为其他特许的Oracle用户帐户保留的条目数量
+
+
+
+-----------------------------------------------------------------------------------------------
+
+OS认证
+
+2个前提必须同时满足。
+
+1.在SQLNET.ORA（位于$ORACLE_HOME/NETWORK/ADMIN目录中）文件中，使用vi编辑，注释掉#SQLNET.AUTHENTICATION_SERVICES = (NONE)该行。
+2.检查当前OS用户是否属于DBA组。
+3.执行sqlplus / as sysdba 登录数据库。
+
+
+只要在登陆时有/ as sysdba就使用OS验证方式。不管是否是sys用户，或者密码是否正确。
+
+
+关闭os验证
+
+1)把操作系统用户的ORA_DBA组取消或者把当前登录用户从ora_dba组中删除。   
+
+2)sqlnet.ora文件SQLNET.AUTHENTICATION_SERVICES= (NONE)      关闭os认证方式
+
+
+
+口令文件认证
+
+1.在SQLNET.ORA（位于$ORACLE_HOME/NETWORK/ADMIN目录中）文件中，使用vi编辑，修改为SQLNET.AUTHENTICATION_SERVICES = (NONE)，如没有则添加该行。
+2.REMOTE_LOGIN_PASSWORDFILE = EXCLUSIVE ，或者 REMOTE_LOGIN_PASSWORDFILE = SHARED
+
+
+开启口令文件验证。
+1.建立口令文件
+2.确认参数是否正确 Remote_login_passwordfile=exclusive
+
+ 
+
+
+-----------------------------------------------------------------------------------------------
+
+
+remote_os_authent参数
+
+Oracle允许用户通过采用外部验证的方式登录数据库。
+默认情况下，只允许本机的用户采用外部验证登录到数据库中。
+当将remote_os_authent这个参数设置为true时，则允许远端用户采用外部验证的方式登录到数据库中。
+
+
+-----------------------------------------------------------------------------------------------
+
+
+DBA用户：具有sysdba，sysoper权限的用户被称为dba用户。
+默认情况下sysdba角色中存在sys用户，sysoper角色中存在system用户
+
+
+决定在两个参数中
+   1.remote_login_passwordfile = none | exclusive |shared  位于$ORACLE_HOME/dbs/spfile$ORACLE_SID.ora参数文件中
+      none : 不使用密码文件认证
+      exclusive :要密码文件认证，自己独占使用(默认值)
+      shared ：要密码文件认证，不同实例dba用户可以共享密码文件
+     
+   2. $ORACLE_HOME/network/admin/sqlnet.ora 
+      SQLNET.AUTHENTICATION_SERVICES = none | all | ntf(windows)
+      none : 表示关闭操作系统认证，只能密码认证
+      all : 用于linux或unix平台，关闭本机密码文件认证，采用操作系统认证，但远程<异机>可以使用密码文件认证
+      nts : 用于windows平台
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
