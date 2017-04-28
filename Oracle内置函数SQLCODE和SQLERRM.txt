@@ -1,0 +1,31 @@
+
+用来返回Oracle的错误代码和错误消息。
+
+Oracle内置函数SQLCODE和SQLERRM是特别用在OTHERS处理器中，分别用来返回Oracle的错误代码和错误消息。
+　　
+OTHERS处理器是异常处理块中的最后的异常处理器，因为它是用来捕获除了别的异常处理器处理以外的所有的Oracle异常，所以在程序的最外层使用一个OTHERS处理器的话，将可以确保所有的错误都会被检测到。
+
+
+在一个内在的异常中，SQLCODE返回Oracle错误的序号，而SQLERRM返回的是相应的错误消息，错误消息首先显示的是错误代码。
+
+SQLCODE返回的是负数，除非Oracle的错误为“ORA-01403：NO DATA FOUND”，当Oracle错误为“ORA-01403：NO DATA FOUND”时，其对应的SQLCODE为+100。
+对于用户自定义的异常，SQLCODE返回的是+1，而SQLERRM返回的是User-Defined Exception。
+如果没有异常被触发，则SQLCODE返回0，SQLERRM返回“ORA-0000：normal, successful completion”。
+
+
+一个Oracle的错误消息最多只能包含512个字节的错误代码。
+
+
+
+sqlcode和sqlerrm是不能直接在sql语句中使用，必须先将其赋给变量后，才能在sql语句中使用。
+
+
+
+DECLARE
+  v_error_code number;
+  v_error_text VARCHAR2(4000);
+BEGIN
+  v_error_code := sqlcode;
+  v_error_text      := SUBSTR(SQLERRM, 1, 1000);
+  dbms_output.put_line(SQLCODE || '@v_error is ' || v_error_text);
+END;

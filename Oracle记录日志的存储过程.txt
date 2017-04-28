@@ -1,0 +1,37 @@
+create or replace procedure prc_T_Trans_Log(P_Action_name varchar2,
+                                            P_Step        number,
+                                            p_StepName    varchar2,
+                                            p_RecordCount number,
+                                            p_startTime   date,
+                                            p_endTime     date,
+                                            p_ErrLog      varchar2) is
+  PRAGMA AUTONOMOUS_TRANSACTION;
+
+  v_id number;
+begin
+  v_id := seq_logID.nextval();
+
+  insert into t_trans_log
+    (id,
+     Action_name,
+     Step,
+     Step_Name,
+     Record_Count,
+     start_Time,
+     end_Time,
+     Err_Log)
+  values
+    (v_id,
+     P_Action_name,
+     P_Step,
+     p_StepName,
+     P_RecordCount,
+     p_startTime,
+     p_endTime,
+     p_ErrLog);
+
+  commit;
+exception
+  when others then
+    rollback;
+end;
