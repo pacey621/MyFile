@@ -1,0 +1,97 @@
+告警日志文件是一类特殊的跟踪文件（trace file）。
+告警日志文件命名一般为alert_<SID>.log，其中SID为ORACLE数据库实例名称。
+数据库告警日志是按时间顺序记录message和错误信息。
+
+后台跟踪文件
+
+在ORACLE 10g中，BACKGROUND_DUMP_DEST参数确定了告警日志的位置，BACKGROUND_DUMP_DEST参数是动态的。告警日志以及所有后台跟踪文件都会被写至BACKGROUND_DUMP_DEST参数所指定的目录。
+
+在ORACLE 11g 以及ORACLE 12c中，告警日志文件的位置有了变化。主要是因为引入了ADR(Automatic Diagnostic Repository:一个存放数据库诊断日志、跟踪文件的目录)，关于ADR对应的目录位置可以通过查看v$diag_info系统视图。
+
+Diag Trace对应的目录为文本格式的告警日志文件所在的目录,
+而Diag Alert对应的目录为XML格式的警告日志(对应为log_x.xml)
+
+从 Oracle 11g 开始，Oracle 数据库以XML与传统的文本两种格式提供 Alert 日志。
+
+
+Oracle 11g自动诊断信息库(Automatic Diagnostic Repository，ADR)
+
+
+----------------------------------------------------------------------------------------------
+
+告警日志内容：
+
+1：所有的内部错误（ORA-600）信息，块损坏错误（ORA-1578）信息，以及死锁错误（ORA-60）信息等。
+
+2：管理操作，例如CREATE、ALTER、DROP语句等，以及数据库启动、关闭以及日志归档的一些信息。
+           2.1 涉及物理结构的所有操作：例如创建、删除、重命名数据文件与联机重做日志文件的ALTER DATABASE命令，此外还涉及重新分配数据文件大小以及将数据文件联机与脱机的操作。
+          2.2 表空间操作，例如DROP与CREATE命令，此外还包括为了进行用户管理的备份而将表空间置入和取出热备份模式的操作.
+
+3：与共享服务器或调度进程相关功能的消息和错误信息。
+
+4：物化视图的自动刷新过程中出现的错误。
+
+5：动态参数的修改信息。
+
+
+-----------------------------------------------------------------------------------------------
+
+告警日志的内容
+   
+    消息和错误的类型(Types of messages and errors)
+    ORA-600内部错误(ORA-600 internal errors that need immediate support from Oracle's customer support )'
+    ORA-1578块损坏错误(ORA-1578 block corruption errors that require recovery)
+    ORA-12012(作业队列错误(ORA-12012 job queue errors)
+    实例启动关闭，恢复等信息(STARTUP & SHUTDOWN, and RECOVER statement execution messages)
+    特定的DDL命令(Certain CREATE, ALTER, & DROP statements )
+    影响表空间，数据文件及回滚段的命令(Statements that effect TABLESPACES, DATAFILES, and ROLLBACK SEGMENTS )
+    可持续的命令被挂起(When a resumable statement is suspended )
+    LGWR不能写入到日志文件(When log writer (LGWR) cannot write to a member of a group )
+    归档进程启动信息(When new Archiver Process (ARCn) is started )
+    调度进程的相关信息(Dispatcher information)
+    动态参数的修改信息(The occurrence of someone changing a dynamic parameter)
+
+-----------------------------------------------------------------------------------------------
+
+
+监控告警日志的方案：通过外部表来查看告警日志文件的内容
+（不手工去查看告警日志文件）
+
+将alert文件中的每一行记录都当做表中一个VARCHAR2(4000)类型列的一行记录，这样就可以通过SQL的方式来访问告警日志了。
+
+
+
+
+在创建外部表之前，需要创建一个DIRECTORY，这个目录的位置就是background_dump_dest初始化参数指定的位置。
+
+SQL> show parameter background_dump_dest
+
+1．建立目录对象
+SQL> create directory alert_log as 'd:\app\administrator\diag\rdbms\orcl\orcl\trace';
+
+2．建立外部表
+SQL> create table alert_log(
+text varchar2(4000)
+)organization external --外部表的关键字
+(type oracle_loader    --外部表的类型
+default directory alert_log --指定目录对象，加载的文件一定要在这里面！
+access parameters   --参数
+(records delimited by newline)
+location('alert_orcl.log') --需要加载的文件名
+);
+
+3．查看alert_orcl.log的内容
+select * from alert_log where text like 'ORA-%';
+
+
+
+-----------------------------------------------------------------------------------------------
+
+外部表，相对于数据库内部表来说的，意思是将操作系统文件作为一个数据库，数据从文件而来。 
+
+外部表都是只读表 , 不能进行 update,insert,delete操作。
+
+外部表是指不在数据库中的表，如操作系统上的一个文本文件，即数据在数据库的外部组织，是操作系统文件。
+
+
+

@@ -1,0 +1,29 @@
+BEQ=bequeath protocol
+
+BEQ协议进程： 使用sqlplus / as sysdba方式登录,系统将会自动创建一个BEQ协议的进程.
+
+BEQ是一个sql*net protocol，有点类似于IPC,仅仅是作为本地连接才能使，就是客户机和服务器程序在同一个服务器上。在不需要listener的情况下创建一个数据库专用链接。
+
+
+在本机上不经过SQL*Net连接数据库，server进程和用户进程之间通过IPC机制进行通信，通信协议就是著名的Bequeath协议，简称BEQ协议。而如果通过SQL*Net连接数据库，那么就需要使用网络协议。使用SQL*Net协议的server进程和用户进程之间的通信采用Socket通信。实际上，在服务器上，我们也可以使用SQL*Net连接数据库，只不过我们很少会去这样做，因为BEQ协议在效率上高于Socket通信。
+
+
+Oracle BEQ方式连接配置 
+
+服务端和客户端在同一台机器上，可以使用BEQ连接，BEQ连接可以理解为进程间直接通信，不需要走网络监听，性能更高。
+
+在tnsnames.ora 配置文件添加如下内容：
+BEQ =
+  (DESCRIPTION =
+    (ADDRESS = 
+      (PROTOCOL = BEQ)
+      (PROGRAM = /u01/app/oracle/product/10.2.0.5/dbhome_1/bin/oracle)
+      (ARGV0 = oraclejyrac1)    
+      (ARGS = '(DESCRIPTION=(LOCAL=YES)(ADDRESS=(PROTOCOL=BEQ)))')
+      (ENVS = 'ORACLE_HOME=/u01/app/oracle/product/10.2.0.5/dbhome_1,ORACLE_SID=jyrac1')
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = jyrac)
+      (INSTANCE_NAME = jyrac1)
+    )
+  )
