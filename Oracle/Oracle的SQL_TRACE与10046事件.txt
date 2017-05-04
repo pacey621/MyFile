@@ -1,0 +1,146 @@
+
+10046事件 可以帮助我们解析 一条/多条SQL、PL/SQL语句的运行状态，这些状态包括：Parse/Execute/Fetch三个阶段中遇到的等待事件、消耗的物理和逻辑读、CPU时间、执行计划等等。
+
+解析（Parse）：此阶段是Oracle的优化器为SQL语句生成执行计划的阶段。
+执行（Execute）：此阶段是服务器进程按照执行计划执行语句的阶段。
+提取（Fetch）：此阶段是服务器进程从表中提取结果的阶段。
+              只有 Select 语句才需要此阶段，Update、Insert、Delete等这些DML语句并不需要抓取行。
+
+10046事件告诉我们SQL(执行计划)运行地如何； 
+10053事件告诉我们优化器为什么为这个SQL选择某个执行计划。
+
+10046事件的跟踪级别:
+level 1:标准的SQL_TRACE功能(默认),包含了SQL语句、响应时间、服务时间、处理的行数，物理读和写的数目、执行计划以及其他一些额外信息。
+level 8:比level 1多出等待事件。
+
+10046事件获取的信息比SQL_TRACE 更多。
+（10046事件的Level 1等同于SQL_TRACE的功能）
+
+10046事件是Oracle提供的内部事件，是对SQL_TRACE的增强。
+
+-----------------------------------------------------------------------------------------------
+
+前提条件：
+1、timed_statistics = TRUE
+参数timed_statistics = true的话，Oracle记录等待事件的wait reason和等待事件开始和结束的时间点，以及该等待是否超时。
+参数timed_statistics = false的话，Oracle只记录了等待事件和等待事件是否超时的信息。
+（11.1.0.7以后如果STATISTICS_LEVEL被设置为typical或者all，则不能将timed_statistics设置为false）
+
+2、max_dump_file_size = UNLIMITED
+为了确保trace输出能够完整进行，需要调整此会话对trace文件大小的限制，一般将此限制取消。
+
+----------------------------------------------------------------------------------------------
+
+
+
+sql_trace的开启和关闭：
+SQL> alter system set sql_trace=true;    --开启系统级别的sql_trace
+SQL> alter session set sql_trace=true;   --开启会话级别的sql_trace
+
+SQL> alter system set sql_trace=false;   --关闭系统级别的sql_trace
+SQL> alter session set sql_trace=false;  --关闭会话级别的sql_trace
+
+
+
+10046事件的开启和关闭：
+--开启本会话的10046事件
+SQL> alter session set events '10046 trace name context forever ,level 8' ;  
+
+--关闭本会话的10046事件
+SQL> alter session set events '10046 trace name context off' ;
+ 
+
+trace文件位置：select value from v$diag_info where name='Default Trace File';
+
+
+sql_trace的使用
+     SQL>alter session set sql_trace=true
+     SQL>alter session set statistics_level =all;          
+     SQL>alter session set timed_statistics = true;          
+     SQL>alter session set max_dump_file_size = unlimited;
+     SQL>alter session set tracefile_identifier = liangjian
+     SQL>sql.....
+     SQL>alter session set sql_trace=false
+     SQL>exit  
+
+
+可以使用参数TRACEFILE_IDENTIFIER，为跟踪文件名增加一个可以惟一标识的串。
+例如：alter session set tracefile_identifier='10046';
+这样，生成的Trace文件名就会以10046.trc结尾。
+
+
+-----------------------------------------------------------------------------------------------
+
+TKPROF是一个可执行文件，自带在Oracle Server软件中，无需额外的安装。 该工具文件可以用来解析ORACLE的SQL TRACE(10046) 以便生成更可读的内容。  
+
+tkprof工具是Oracle自带的一个工具，用于处理原始的trace文件，它的作用主要是合并汇总trace文件中的一些项，规范化文件的格式，使文件更具有可读性。
+
+tkprof是一个命令行工具，作用就是把原始的trace文件作为输入，然后格式化一个可读性比较好的文本文件。
+
+注意：tkprof 工具只能用在处理SQL_TRACE和10046事件产生的trace，其他事件如10053不能处理。
+
+
+TKPROF的语法如下：
+tkprof tracefile outfile [explain=user/password] [options…]
+
+
+
+tkprof tracefile outputfile [explain= ] [sys= ] [sort= ]
+
+
+参数：
+EXPLAIN   对每条SQL语句提供一个执行计划，并将执行计划写到输出文件中。该参数需要指定用户、密码。
+(explain=apps/apps@dev3	解释执行计划时需要登录oracle)
+
+比较有用的一个排序选项是fchela，即按照elapsed time fetching来对分析的结果排序（记住要设置初始化参数timed_statistics=true），生成的文件将把最消耗时间的sql放在最前面显示。
+
+一个有用的参数是sys，这个参数设置为no可以阻止所有以sys用户执行的sql被显示出来，这样可以减少分析出来的文件的复杂度，便于查看。
+
+
+fchela：游标获取数据行所花费的时间
+
+
+
+count：执行的数据库调用次数
+cpu：处理数据调用花去的CPU时间，以秒为单位
+elapsed：处理数据库调用花费的总的时间，以秒为单位
+disk：物理读的数据块数量，如果大于逻辑读的数量（disk>query+current），表示使用了临时表空间。
+query：在一致性模式下从高速缓存逻辑读取的块数量，用作select。
+current：在当前模式下从高速缓存逻辑读取的块数量，用于insert、delete、merge以及update等操作。
+rows：处理的数据行数量。查询表示获取的行数量，而insert、delete、merge以及update等则表示影响的行数量。
+
+硬解析数量:Misses in library cache 
+
+
+执行计划:
+cr：一致性模式下逻辑读出的数据块数
+pr：从磁盘物理读出的数据块数
+pw：物理写入磁盘的数据块数
+time：以微妙表示的总的耗费时间，注意数据不精确
+cost：操作的评估开销（仅11g才提供）
+size：操作返回的预估计数据量（字节数）（仅11g才提供）
+card：操作返回的预估计行数（仅11g才提供）
+
+tkprof E:\TRC\orcl_ora_896.trc E:\TRC\10046.TXT explain=HFYB_201702/1@ORCL_231  sys=NO  sort= fchela
+
+
+
+http://www.askmaclean.com/archives/maclean-tech-tkprof-10046.html
+
+
+----------------------------------------------------------------------------------------------
+
+https://blogs.oracle.com/askmaclean/entry/maclean%E6%95%99%E4%BD%A0%E8%AF%BBoracle_10046_sql_trace
+
+
+
+
+                       
+
+
+
+
+
+
+
+
