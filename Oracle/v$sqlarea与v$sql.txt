@@ -1,0 +1,39 @@
+
+select
+SQL_TEXT,--：SQL文本的前1000个字符
+SHARABLE_MEM/1024/1024 ,--：占用的共享内存大小(单位：byte)
+PERSISTENT_MEM/1024/1024 ,--：生命期内的固定内存大小(单位：byte)
+RUNTIME_MEM/1024/1024 ,--：执行期内的固定内存大小
+EXECUTIONS,--：自它被载入缓存库后的执行次数
+PARSE_CALLS,--：解析调用次数
+DISK_READS,--：读磁盘次数
+BUFFER_GETS,--：读缓存区次数
+ROWS_PROCESSED,--：解析SQL语句返回的总列数
+OPTIMIZER_MODE,--：SQL语句的优化器模型
+OPTIMIZER_COST,--：优化器给出的本次查询成本
+CPU_TIME/1000,--：解析/执行/取得等CPU使用时间(单位，毫秒)
+ELAPSED_TIME/1000--：解析/执行/取得等消耗时间(单位，毫秒)
+
+from v$sqlarea
+
+-----------------------------------------------------------------------------------------------
+
+
+select
+SQL_TEXT,--：SQL文本的前1000个字符
+SHARABLE_MEM/1024/1024 ,--：占用的共享内存大小(单位：byte)
+PERSISTENT_MEM/1024/1024 ,--：生命期内的固定内存大小(单位：byte)
+RUNTIME_MEM/1024/1024 ,--：执行期内的固定内存大小
+EXECUTIONS,--：自它被载入缓存库后的执行次数
+PARSE_CALLS,--：解析调用次数
+DISK_READS,--：读磁盘次数
+BUFFER_GETS,--：读缓存区次数
+ROWS_PROCESSED,--：解析SQL语句返回的总列数
+OPTIMIZER_MODE,--：SQL语句的优化器模型
+OPTIMIZER_COST,--：优化器给出的本次查询成本
+CHILD_NUMBER,--：子游标数量
+CPU_TIME/1000,--：解析/执行/取得等CPU使用时间(单位，毫秒)
+ELAPSED_TIME/1000,--：解析/执行/取得等消耗时间(单位，毫秒)
+SQLTYPE--：指出当前语句使用的SQL语言版本
+
+from v$sql
