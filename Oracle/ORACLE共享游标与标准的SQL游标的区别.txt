@@ -1,0 +1,15 @@
+
+当用户提交SQL语句或PL/SQL程序块到shared pool以后，会在library cache中生成一个可执行的对象，这个library cache中的可执行的对象就叫做游标（cursor）。
+
+共享游标是可以被所有进程共享的，也就是说如果100个进程都执行相同的SQL语句，那么这100个进程都可以共用该SQL语句所产生的游标。
+ 
+
+不要把这里的游标与标准SQL（ANSI SQL）的游标混淆，标准SQL里的游标是指返回多条记录的SQL形式，需要定义、打开、关闭 。
+
+共享游标：library cache中的可执行的对象
+标准的SQL游标：一种能够从包括多条数据记录的结果集中每次提取一条记录的机制。游标充当指针的作用。
+               SQL游标提供了逐行操作表中数据的方法。
+
+
+共享游标（shared cursor）
+共享游标是用户提交SQL或PL/SQL程序块到Oracle的share pool之后，在library cache中生成的一个可执行对象，这个对象我们称之为游标（cursor）。而SQL定义游标则是SELECT语句产生的多行结果集，需要声明、打开、提取、关闭。
