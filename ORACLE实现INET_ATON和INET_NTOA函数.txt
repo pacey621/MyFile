@@ -1,0 +1,50 @@
+
+
+CREATE OR REPLACE
+FUNCTION inet_ntoa(ip_num IN INTEGER) RETURN VARCHAR2 IS
+  hex16 VARCHAR2(8);
+BEGIN
+  -- 1. convert the integer into hexadecimal representation
+  hex16 := TO_CHAR(ip_num, 'FMXXXXXXXX');
+  hex16 := LPAD(hex16,8,'0');
+  -- 2. convert each XX portion back into decimal
+  RETURN to_number(substr(hex16,1,2),'FMXX')
+       || '.' || to_number(substr(hex16,3,2),'FMXX')
+       || '.' || to_number(substr(hex16,5,2),'FMXX')
+       || '.' || to_number(substr(hex16,7,2),'FMXX');
+END inet_ntoa;
+
+
+----------------------------------------------------------------------------
+
+
+CREATE OR REPLACE
+FUNCTION inet_aton(ip_str IN VARCHAR2) RETURN INTEGER IS
+  d1 INTEGER;
+  d2 INTEGER;
+  d3 INTEGER;
+  ip1 VARCHAR2(3);
+  ip2 VARCHAR2(3);
+  ip3 VARCHAR2(3);
+  ip4 VARCHAR2(3);
+  hex16 VARCHAR2(8);
+BEGIN
+  -- 1. parse the input, e.g. '203.30.237.2'
+  d1 := INSTR(ip_str,'.');     -- first dot
+  d2 := INSTR(ip_str,'.',1,2); -- second dot
+  d3 := INSTR(ip_str,'.',1,3); -- third dot
+  ip1 := SUBSTR(ip_str, 1, d1 - 1);           -- e.g. '203'
+  ip2 := SUBSTR(ip_str, d1 + 1, d2 - d1 - 1); -- e.g. '30'
+  ip3 := SUBSTR(ip_str, d2 + 1, d3 - d2 - 1); -- e.g. '237'
+  ip4 := SUBSTR(ip_str, d3 + 1);              -- e.g. '2'
+  -- 2. convert to a hexadecimal string
+  hex16 := LPAD(TO_CHAR(TO_NUMBER(ip1),'FMXX'),2,'0')
+     || LPAD(TO_CHAR(TO_NUMBER(ip2),'FMXX'),2,'0')
+     || LPAD(TO_CHAR(TO_NUMBER(ip3),'FMXX'),2,'0')
+     || LPAD(TO_CHAR(TO_NUMBER(ip4),'FMXX'),2,'0');
+  -- 3. convert to a decimal number
+  RETURN TO_NUMBER(hex16, 'FMXXXXXXXX');
+END inet_aton;
+
+
+
