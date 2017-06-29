@@ -1,0 +1,117 @@
+-- Create table
+create table T_DATA_BILL
+(
+  BILL_ID                  NUMBER(16) not null,
+  BATCH_ID                 NUMBER(16) not null,
+  ORG_ID                   NUMBER(16) not null,
+  ORG_NAME                 VARCHAR2(50) not null,
+  SI_TYPE_ID               NUMBER(16) not null,
+  SI_TYPE_NAME             VARCHAR2(50) not null,
+  HOSP_ID                  NUMBER(16) not null,
+  INSURED_ORG_ID           NUMBER(16),
+  INSURED_ORG_NAME         VARCHAR2(50),
+  
+  VISIT_CODE               VARCHAR2(5),
+  VISIT_TYPE               VARCHAR2(50),
+  REG_CODE                 VARCHAR2(50),
+  PSN_CODE                 VARCHAR2(50),
+  IC_NO                    VARCHAR2(50),
+  IDCARD                   VARCHAR2(50),
+  PSN_TYPE                 VARCHAR2(50),
+  PSN_NAME                 VARCHAR2(100),
+  PSN_SEX                  VARCHAR2(50),
+  PSN_AGE                  NUMBER(10),
+  BIRTH_DAY                DATE,
+  
+  BILL_CODE                VARCHAR2(50),
+  BILL_OWNER_KEY           VARCHAR2(50),
+  BILL_DT                  DATE,
+  BILL_GEN_WORKER          VARCHAR2(100),
+  BILL_DETAIL_CNT          NUMBER(10),
+  BILL_AMT                 NUMBER(12,4),
+  FUND_AMT                 NUMBER(12,4),
+  PSN_ACC_AMT              NUMBER(12,4),
+  PSN_CASH_AMT             NUMBER(12,4),
+  INBED_DAYS               NUMBER(10),
+  
+  INHOSP_DT                DATE,
+  INHOSP_DEP_CODE          VARCHAR2(50),
+  INHOSP_DEP_NAME          VARCHAR2(100),
+  INHOSP_DOCTOR_CODE       VARCHAR2(50),
+  INHOSP_DOCTOR_NAME       VARCHAR2(100),
+  INHOSP_EXAM              VARCHAR2(1000),
+  INHOSP_DIAG_CODE        VARCHAR2(50),
+  INHOSP_DIAG_NAME        VARCHAR2(1000),
+  INHOSP_ICD_CODE         VARCHAR2(50),
+  INHOSP_ICD_NAME         VARCHAR2(100),
+  
+  OUTHOSP_DT               DATE,
+  OUTHOSP_DEP_CODE         VARCHAR2(50),
+  OUTHOSP_DEP_NAME         VARCHAR2(100),
+  OUTHOSP_DOCTOR_CODE      VARCHAR2(50),
+  OUTHOSP_DOCTOR_NAME      VARCHAR2(100),
+  OUTHOSP_EXAM             VARCHAR2(1000),
+  OUTHOSP_DIAG_CODE        VARCHAR2(50),
+  OUTHOSP_DIAG_NAME        VARCHAR2(1000),
+  OUTHOSP_ICD_CODE         VARCHAR2(50),
+  OUTHOSP_ICD_NAME         VARCHAR2(100),
+  
+  
+  AUTO_CHECK_STATUS        VARCHAR2(50),
+  AUTO_CHECK_RULE_ID       NUMBER(10),
+  AUTO_CHECK_RULE_NAME     VARCHAR2(100),
+  AUTO_CHECK_CNT           NUMBER(10),
+  AUTO_CHECK_AMT           NUMBER(12,4),
+  AUTO_CHECK_DEDUC_AMT     NUMBER(12,4),
+  AUTO_CHECK_NOTE          VARCHAR2(500),
+  AUTO_CHECK_DT            DATE,
+  
+  PSN_CHECK_STATUS         VARCHAR2(50),
+  
+  PSN1_CHECK_RULE_ID        NUMBER(10),
+  PSN1_CHECK_RULE_NAME      VARCHAR2(100),
+  PSN1_CHECK_CNT            NUMBER(10),
+  PSN1_CHECK_AMT            NUMBER(12,4),
+  PSN1_CHECK_DEDUC_AMT      NUMBER(12,4),
+  PSN1_CHECK_NOTE           VARCHAR2(3000),
+  PSN1_CHECK_DT             DATE,
+  PSN1_CHECK_USER_ID        NUMBER(10),
+  PSN1_CHECK_USER_NAME      VARCHAR2(100),
+  
+  PSN2_CHECK_RULE_ID        NUMBER(10),
+  PSN2_CHECK_RULE_NAME      VARCHAR2(100),
+  PSN2_CHECK_CNT            NUMBER(10),
+  PSN2_CHECK_AMT            NUMBER(12,4),
+  PSN2_CHECK_DEDUC_AMT      NUMBER(12,4),
+  PSN2_CHECK_NOTE           VARCHAR2(3000),
+  PSN2_CHECK_DT             DATE,
+  PSN2_CHECK_USER_ID        NUMBER(10),
+  PSN2_CHECK_USER_NAME      VARCHAR2(100),
+  
+ 
+  REVIEW_CNT               NUMBER(10),
+  REVIEW_Y_CNT             NUMBER(10),
+  REVIEW_N_CNT             NUMBER(10),
+  FEEDBACKED_CNT           NUMBER(10),
+  CHECK_FLOW_ID            NUMBER(16),
+  IS_RETURN                NUMBER(2),
+  IS_NEED_CHECK            NUMBER(2)
+)
+partition by list (VISIT_CODE)
+(
+  partition P_INBED values ('00'),
+  partition P_PRES values ('01'),
+  partition P_special_diseases values ('02')
+);
+
+-- Create/Recreate primary, unique and foreign key constraints 
+alter table T_DATA_BILL
+  add constraint PK_T_DATA_BILL primary key (BILL_ID);
+-- Create/Recreate indexes 
+create index IDX_BILL1 on T_DATA_BILL (BATCH_ID,ORG_ID,SI_TYPE_ID, HOSP_ID, INSURED_ORG_ID);
+create index IDX_BILL2 on T_DATA_BILL (OWNER_KEY);
+create index IDX_BILL3 on T_DATA_BILL (BILL_CODE);
+create index IDX_BILL4 on T_DATA_BILL (PSN_CODE);
+create index IDX_BILL4 on T_DATA_BILL (VISIT_TYPE);
+        
+

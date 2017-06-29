@@ -1,0 +1,131 @@
+-- Create table
+create table T_DATA_BILL_DETAIL
+(
+  BILL_DETAIL_ID           NUMBER(16) not null,
+  BILL_ID                  NUMBER(16) not null,
+  BATCH_ID                 NUMBER(16) not null,
+  ORG_ID                   NUMBER(16) not null,
+  ORG_NAME                 VARCHAR2(50) not null,
+  SI_TYPE_ID               NUMBER(16) not null,
+  SI_TYPE_NAME             VARCHAR2(50) not null,
+  HOSP_ID                  NUMBER(16) not null,
+  INSURED_ORG_ID           NUMBER(16),
+  INSURED_ORG_NAME         VARCHAR2(50),
+  
+  VISIT_CODE               VARCHAR2(5),
+  VISIT_TYPE               VARCHAR2(50),
+  PSN_CODE                 VARCHAR2(50),
+  PSN_NAME                 VARCHAR2(50),
+  BILL_CODE                VARCHAR2(50),
+  
+  OWNER_KEY                 VARCHAR2(50),
+  ITEM_FEE_DT               DATE,
+  ITEM_TYPE                 VARCHAR2(50),
+  
+  HOSP_ITEM_OWNER_ID        VARCHAR2(50),
+  HOSP_ITEM_CODE            VARCHAR2(50),
+  HOSP_ITEM_NAME            VARCHAR2(100),
+  SI_ITEM_OWNER_ID          VARCHAR2(50),
+  SI_ITEM_CODE              VARCHAR2(50),
+  SI_ITEM_NAME              VARCHAR2(100),
+  ITEM_PRICE                NUMBER(12,4),
+  ITEM_CNT                  NUMBER(12,4),
+  ITEM_AMT                  NUMBER(12,4),
+  DRUG_SPEC                 VARCHAR2(500),
+  DRUG_UNIT                 VARCHAR2(50),
+  DRUG_FORM                 VARCHAR2(100),
+  DRUG_FACTORY_NAME         VARCHAR2(500),
+  
+  ITEM_FEE_TYPE             VARCHAR2(50),
+  SELF_PAY_RATE             NUMBER(12,4),
+  SELF_PAY_AMT              NUMBER(12,4),
+   
+  USED_PER                  NUMBER(12,4),
+  USED_FREQ                 VARCHAR2(50),
+  USED_NOTE                 VARCHAR2(500),
+  USED_DAYS                 NUMBER(10),
+  
+  CUR_DEP_CODE              VARCHAR2(50),
+  CUR_DEP_NAME              VARCHAR2(100),
+  CUR_DOCTOR_CODE           VARCHAR2(50),
+  CUR_DOCTOR_NAME           VARCHAR2(100),
+  
+  SI_ITEM_ID                NUMBER(16),
+  DRUG_PUB_ID               NUMBER(16),
+  DIAG_ID                   NUMBER(16),
+  
+  AUTO_CHECK_STATUS         VARCHAR2(50),
+  AUTO_CHECK_RULE_ID        NUMBER(10),
+  AUTO_CHECK_RULE_NAME      VARCHAR2(100),
+  AUTO_CHECK_CNT            NUMBER(12,4),
+  AUTO_CHECK_AMT            NUMBER(12,4),
+  AUTO_CHECK_DEDUC_AMT      NUMBER(12,4),
+  AUTO_CHECK_NOTE           VARCHAR2(4000),
+  AUTO_CHECK_DT             DATE,
+  
+  PSN1_CHECK_STATUS          VARCHAR2(50),
+  PSN1_CHECK_RULE_ID         NUMBER(10),
+  PSN1_CHECK_RULE_NAME       VARCHAR2(100),
+  PSN1_CHECK_CNT             NUMBER(12,4),
+  PSN1_CHECK_AMT             NUMBER(12,4),
+  PSN1_CHECK_DEDUC_AMT       NUMBER(12,4),
+  PSN1_CHECK_NOTE            VARCHAR2(4000),
+  PSN1_CHECK_DT              DATE,
+  PSN1_CHECK_USER_ID         NUMBER(10),
+  PSN1_CHECK_USER_NAME       VARCHAR2(100),
+  
+  PSN2_CHECK_STATUS          VARCHAR2(50),
+  PSN2_CHECK_RULE_ID         NUMBER(10),
+  PSN2_CHECK_RULE_NAME       VARCHAR2(100),
+  PSN2_CHECK_CNT             NUMBER(12,4),
+  PSN2_CHECK_AMT             NUMBER(12,4),
+  PSN2_CHECK_DEDUC_AMT       NUMBER(12,4),
+  PSN2_CHECK_NOTE            VARCHAR2(4000),
+  PSN2_CHECK_DT              DATE,
+  PSN2_CHECK_USER_ID         NUMBER(10),
+  PSN2_CHECK_USER_NAME       VARCHAR2(100),
+  
+  REVIEW_TYPE               VARCHAR2(50),
+  REVIEW_NOTE               VARCHAR2(4000),
+  REVIEW_DT                 DATE,
+  REVIEW_USER_ID            NUMBER(10),
+  REVIEW_USER_NAME          VARCHAR2(100),
+  
+  REVIEW_PRC_RST            VARCHAR2(50),
+  REVIEW_PRC_NOTE           VARCHAR2(500),
+  REVIEW_PRC_DT             DATE,
+  REVIEW_PRC_USER_ID        NUMBER(10),
+  REVIEW_PRC_USER_NAME      VARCHAR2(100),
+ 
+  FEEDBACKED_FLAG           VARCHAR2(20),
+  
+  CHECK_FLOW_ID             NUMBER(16),
+  
+  IS_RETURN                 NUMBER(2),
+  IS_NEED_CHECK             NUMBER(2) 
+)
+partition by list (VISIT_CODE)
+(
+  partition P_INBED values ('00'),
+  partition P_PRES values ('01'),
+  partition P_special_diseases values ('02')
+);
+
+-- Create/Recreate primary, unique and foreign key constraints 
+alter table T_DATA_BILL_DETAIL
+  add constraint PK_T_DATA_BILL_DETAIL primary key (BILL_DETAIL_ID);
+  
+alter table T_DATA_BILL_DETAIL
+  add constraint FK_T_DATA_BILL foreign key (BILL_ID)
+  references T_DATA_BILL (BILL_ID);
+  
+-- Create/Recreate indexes 
+create index IDX_BILL_DETAIL1 on T_DATA_BILL_DETAIL (BATCH_ID,SI_TYPE_ID,ORG_ID, HOSP_ID,INSURED_ORG_ID);
+create index IDX_BILL_DETAIL2 on T_DATA_BILL_DETAIL (INBED_BILL_ID);
+create index IDX_BILL_DETAIL3 on T_DATA_BILL (OWNER_KEY);
+create index IDX_BILL_DETAIL4 on T_DATA_BILL (BILL_CODE);
+create index IDX_BILL_DETAIL5 on T_DATA_BILL (PSN_CODE);
+create index IDX_BILL_DETAIL6 on T_DATA_BILL (VISIT_TYPE);
+
+
+
