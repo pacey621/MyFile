@@ -1,0 +1,30 @@
+-- Create table
+create table T_REG_HOSP
+(
+  HOSP_ID          NUMBER(16) not null,
+  ORG_ID           NUMBER(16) not null,
+  ORG_NAME         VARCHAR2(100) not null,
+  HOSP_CODE        VARCHAR2(50),
+  HOSP_NAME        VARCHAR2(100),
+  HOSP_TYPE_CODE   VARCHAR2(50),
+  HOSP_TYPE_NAME   VARCHAR2(100),
+  HOSP_LEVEL_ID    NUMBER(16) not null,
+  HOSP_LEVEL_CODE  VARCHAR2(50),
+  HOSP_LEVEL_NAME  VARCHAR2(50),
+  MODIFY_USER_ID   NUMBER(16),
+  MODIFY_USER_NAME VARCHAR2(100),
+  MODIFY_DT        DATE,
+  STATUS           VARCHAR2(50),
+  NOTE             VARCHAR2(500),
+  ADDRESS          VARCHAR2(500),
+  CONTACT_PSN      VARCHAR2(50),
+  TELEPHONE        VARCHAR2(50),
+  OWNER_key    VARCHAR2(50)
+ 
+);
+-- Create/Recreate primary, unique and foreign key constraints 
+alter table T_REG_HOSP
+  add constraint PK_T_REG_HOSP primary key (HOSP_ID);
+alter table T_REG_HOSP
+  add constraint FK_T_REG_HO_REL_80_T_SYS_OR foreign key (ORG_ID)
+  references T_SYS_ORG (ORG_ID);
